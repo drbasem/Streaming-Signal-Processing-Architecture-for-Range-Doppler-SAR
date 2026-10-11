@@ -273,7 +273,7 @@ The classic path ends with an **IFFT** (`ifft`). The streaming path ends with `f
 
 A forward FFT applied where an inverse FFT belongs gives `N · x[(−n) mod N]`. That is the right answer, **scaled by N and index-reversed along azimuth**. Dividing by 512 fixes the scale. Taking `abs` hides the phase, but the reversal remains.
 
-I checked this in a Python port using random data and a stand-in filter:
+I checked this in a Python port: first on random data with a stand-in filter, then on a port of the full pipeline (`init_param` + `main`), where the flipped comparison matched to a relative error of about 2e-16, versus about 0.59 unflipped:
 
 ```
 DIF out == bit-reversed FFT:                True
@@ -286,13 +286,13 @@ What this means for you:
 - To compare them numerically, flip one of them, e.g. compare `x7(:, [1 512:-1:2])` against `xx7/512`.
 - A proper fix would be to conjugate the twiddle (use `exp(+1j*2*pi/m)`) in `fft_dit.m` and divide by 512, or to conjugate the input and output of the last FFT.
 
-Caveats on my own claim: MATLAB is not installed in my environment, so I did **not** run `main.m`. The check above covers the FFT chain only, not the full SAR focusing with the real filters. Run `main` and compare the two plots to confirm.
+Caveat: MATLAB is not installed in my environment, so I did **not** run `main.m` itself; the Python port stands in for it. Run `main` and compare the two plots to confirm.
 
 ---
 
 ## 7. Hands-on exercises
 
-1. **Run it.** Type `main`. Which surface has two clear peaks? Where are they (row ≈ `2*1000/3e8*100e6` ≈ 667 for the first target)?
+1. **Run it.** Type `main`. Both surfaces should show two peaks. Look for them near rows 766 and 900. The echo starts at row ≈ `2*1000/3e8*100e6 + 1` ≈ 668, but the matched filter output peaks about one chirp length (≈ 99 samples) later. Likewise for the second target (starts ≈ 801).
 2. **Numerical comparison.** After running, execute:
    ```matlab
    err1 = norm(x7 - xx7/512, 'fro') / norm(x7, 'fro')
